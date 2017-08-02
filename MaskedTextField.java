@@ -48,6 +48,13 @@ public class MaskedTextField extends TextField{
     private String actualText;
     private int maskLength;
     
+    public MaskedTextField(){
+        this.mask = new SimpleStringProperty(this, "mask", "");
+        this.placeholder = new SimpleStringProperty(this,"placeholder","_");
+        this.plainText = new SimpleStringProperty(this,"plaintext","");
+        start();
+    }
+    
     public MaskedTextField(String mask){
         this.mask = new SimpleStringProperty(this, "mask", mask);
         this.placeholder = new SimpleStringProperty(this,"placeholder","_");
