@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package maskedtest;
-
 import java.util.regex.Pattern;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -70,7 +68,7 @@ public class MaskedTextField extends TextField{
         actualText = defaultText;
         setText(defaultText);
         
-        // When MaskedTextField gains focus caret goes to first placeholder position
+        // When MaskedTextField gains focus caret goes to first placeholder position and avoid default selection
         focusedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
             Platform.runLater(() -> {
                 int pos = getText().indexOf(placeholder.get());
@@ -147,6 +145,7 @@ public class MaskedTextField extends TextField{
         return false;
     }
     
+    // Count diffences between mask and actual text to see where plain text starts/end
     private int maskPositionToPlainTextPosition(int pos){
         int count = 0;
         char [] atext = actualText.toCharArray();
