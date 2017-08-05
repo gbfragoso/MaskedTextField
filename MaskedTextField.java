@@ -166,33 +166,7 @@ public class MaskedTextField extends TextField{
         
         return count;
     }
-    /* Under testing
-    private String buildMaskedText(String mask){
-        int length = mask.length();
-        String holder = placeholder.get();
-        ArrayList<Character> availableMasks = new ArrayList<>(
-            Arrays.asList(MASK_ANYTHING, MASK_CHARACTER, MASK_CHAR_OR_NUM, 
-                        MASK_ESCAPE, MASK_HEXADECIMAL, MASK_LOWER_CHARACTER, 
-                        MASK_NUMBER, MASK_UPPER_CHARACTER));
-        StringBuilder builder = new StringBuilder();
-        
-        for (int i = 0; i < length; i++){
-            char m = mask.charAt(i);
-            if(availableMasks.contains(m)){
-                // Escape char ignore next mask char
-                if(m == MASK_ESCAPE){
-                    builder.append(mask.charAt(++i));
-                }else{
-                    builder.append(holder);
-                }    
-            }else{
-                builder.append(m);
-            }
-        }
-        
-        return builder.toString();
-    }
-    */
+    
     private void updateEditorText(){
         
         String newPlainText = getPlainText();
