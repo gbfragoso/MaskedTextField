@@ -7,16 +7,12 @@ The following table shows the characters that you can use in the formatting mask
 |Character | Description |
 | ------------- | ------------- |
 | \# | Any valid number (Character.isDigit) |
-| ' | (Single Quote) Escape character, used to escape any of the special formatting characters |
 | U | Any character (Character.isLetter). All lowercase letters are mapped to uppercase |
 | L | Any character (Character.isLetter). All uppercase letters are mapped to lowercase |
 | A | Any character or number (Character.isLetter or Character.isDigit) |
 | ? | Any character (Character.isLetter) |
 | * | Anything |
 | H | Any hex character (0-9, a-f or A-F) |
-
-# Version 1.1
-- Escape character is now supported.
 
 # Using in JavaFX code (without FXML)
 
