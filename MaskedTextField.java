@@ -39,7 +39,6 @@ public class MaskedTextField extends TextField{
     private static final char MASK_ANYTHING = '*';
     private static final char MASK_CHARACTER = '?';
     private static final char MASK_CHAR_OR_NUM = 'A';
-    private static final char MASK_ESCAPE = '\'';
     private static final char MASK_HEXADECIMAL = 'H';
     private static final char MASK_LOWER_CHARACTER = 'L';
     private static final char MASK_NUMBER = '#';
@@ -72,7 +71,7 @@ public class MaskedTextField extends TextField{
     
     private void start(){
         maskLength = mask.get().length();
-        defaultText = buildMaskedText(mask.get());
+        defaultText = mask.get().replaceAll("[#\\?HULA\\*]", placeholder.get());
         actualText = defaultText;
         setText(defaultText);
         
@@ -107,13 +106,13 @@ public class MaskedTextField extends TextField{
     public final void setMask(String m){
         mask.set(m);
         maskLength = m.length();
-        defaultText = buildMaskedText(m);
+        defaultText = m.replaceAll("[#\\?HULA\\*]", placeholder.get());
         updateEditorText();
     }
     
     public final void setPlaceholder(String holder){
         placeholder.set(holder);
-        defaultText = buildMaskedText(mask.get());
+        defaultText = mask.get().replaceAll("[#\\?HULA\\*]", holder);
         updateEditorText();
     }
     
@@ -167,7 +166,7 @@ public class MaskedTextField extends TextField{
         
         return count;
     }
-    
+    /* Under testing
     private String buildMaskedText(String mask){
         int length = mask.length();
         String holder = placeholder.get();
@@ -193,7 +192,7 @@ public class MaskedTextField extends TextField{
         
         return builder.toString();
     }
-    
+    */
     private void updateEditorText(){
         
         String newPlainText = getPlainText();
