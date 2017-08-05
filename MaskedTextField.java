@@ -36,13 +36,14 @@ public class MaskedTextField extends TextField{
     private StringProperty plainText;
     
     // Available masks
-    private static final char MASK_NUMBER = '#';
-    private static final char MASK_CHARACTER = '?';
-    private static final char MASK_HEXADECIMAL = 'H';
-    private static final char MASK_UPPER_CHARACTER = 'U';
-    private static final char MASK_LOWER_CHARACTER = 'L';
-    private static final char MASK_CHAR_OR_NUM = 'A';
     private static final char MASK_ANYTHING = '*';
+    private static final char MASK_CHARACTER = '?';
+    private static final char MASK_CHAR_OR_NUM = 'A';
+    private static final char MASK_ESCAPE = '\'';
+    private static final char MASK_HEXADECIMAL = 'H';
+    private static final char MASK_LOWER_CHARACTER = 'L';
+    private static final char MASK_NUMBER = '#';
+    private static final char MASK_UPPER_CHARACTER = 'U';
     
     private String defaultText;
     private String actualText;
@@ -71,7 +72,7 @@ public class MaskedTextField extends TextField{
     
     private void start(){
         maskLength = mask.get().length();
-        defaultText = mask.get().replaceAll("[#\\?HULA\\*]", placeholder.get());
+        defaultText = buildMaskedText(mask.get());
         actualText = defaultText;
         setText(defaultText);
         
@@ -106,13 +107,13 @@ public class MaskedTextField extends TextField{
     public final void setMask(String m){
         mask.set(m);
         maskLength = m.length();
-        defaultText = m.replaceAll("[#\\?HULA\\*]", placeholder.get());
+        defaultText = buildMaskedText(m);
         updateEditorText();
     }
     
     public final void setPlaceholder(String holder){
         placeholder.set(holder);
-        defaultText = mask.get().replaceAll("[#\\?HULA\\*]", holder);
+        defaultText = buildMaskedText(mask.get());
         updateEditorText();
     }
     
@@ -165,6 +166,32 @@ public class MaskedTextField extends TextField{
         }
         
         return count;
+    }
+    
+    private String buildMaskedText(String mask){
+        int length = mask.length();
+        String holder = placeholder.get();
+        ArrayList<Character> availableMasks = new ArrayList<>(
+            Arrays.asList(MASK_ANYTHING, MASK_CHARACTER, MASK_CHAR_OR_NUM, 
+                        MASK_ESCAPE, MASK_HEXADECIMAL, MASK_LOWER_CHARACTER, 
+                        MASK_NUMBER, MASK_UPPER_CHARACTER));
+        StringBuilder builder = new StringBuilder();
+        
+        for (int i = 0; i < length; i++){
+            char m = mask.charAt(i);
+            if(availableMasks.contains(m)){
+                // Escape char ignore next mask char
+                if(m == MASK_ESCAPE){
+                    builder.append(mask.charAt(++i));
+                }else{
+                    builder.append(holder);
+                }    
+            }else{
+                builder.append(m);
+            }
+        }
+        
+        return builder.toString();
     }
     
     private void updateEditorText(){
