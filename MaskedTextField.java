@@ -250,4 +250,9 @@ public class MaskedTextField extends TextField{
         // Building new plain text
         setPlainText(rightText + Text + leftText);
     }
+    
+    @Override
+    public void clear(){
+        setPlainText("");
+    }
 }
