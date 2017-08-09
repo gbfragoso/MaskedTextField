@@ -228,7 +228,7 @@ public class MaskedTextField extends TextField{
     // *******************************************************
     
     @Override
-    public void replaceText(int start, int end, String Text){
+    public void replaceText(int start, int end, String newText){
         
         int plainStart = maskPositionToPlainTextPosition(start);
         int plainEnd = maskPositionToPlainTextPosition(end);
@@ -248,7 +248,7 @@ public class MaskedTextField extends TextField{
         }
         
         // Building new plain text
-        setPlainText(rightText + Text + leftText);
+        setPlainText(rightText + newText + leftText);
     }
     
     @Override
