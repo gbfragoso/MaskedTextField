@@ -34,3 +34,6 @@ text.setMask("((####))");
 <MaskedTextField mask="(###)#####-####" placeholder=" " plainText="5555"/>
 ```
 The available tags to use in FXML are: mask, placeholder and plainText;
+
+# Known issues
+When user types placeholder char the caret position wont be remarked correctly
