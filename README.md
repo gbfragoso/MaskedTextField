@@ -15,6 +15,10 @@ The following table shows the characters that you can use in the formatting mask
 | * | Anything |
 | H | Any hex character (0-9, a-f or A-F) |
 
+# Demonstration
+
+![Working mask](mask.gif)
+
 # Using in JavaFX code (without FXML)
 
 ``` java
