@@ -7,6 +7,7 @@ The following table shows the characters that you can use in the formatting mask
 |Character | Description |
 | ------------- | ------------- |
 | \# | Any valid number (Character.isDigit) |
+| ' | Escape character, used to escape any of the special formatting characters. |
 | U | Any character (Character.isLetter). All lowercase letters are mapped to uppercase |
 | L | Any character (Character.isLetter). All uppercase letters are mapped to lowercase |
 | A | Any character or number (Character.isLetter or Character.isDigit) |
@@ -36,4 +37,4 @@ text.setMask("((####))");
 The available tags to use in FXML are: mask, placeholder and plainText;
 
 # Known issues
-When user types placeholder char the caret position wont be remarked correctly
+When user paste large text with multiple wrong characters the mask will broke.
