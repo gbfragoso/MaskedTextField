@@ -2,7 +2,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- Delete selection
+- Performance polish
+
+## [1.2] - 2017-11-08
+### Added 
+- Now the user can delete/replace selected text
 
 ## [1.1] - 2017-11-07
 ### Added
