@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 ### Added 
 - Now the user can delete/replace selected text
 
+### Fixed
+- IndexOutOfBound exception at firstPlaceHolder() when mask has escape characters 
+
 ## [1.1] - 2017-11-07
 ### Added
 - Semantic Mask class
