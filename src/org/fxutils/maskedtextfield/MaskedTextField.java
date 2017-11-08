@@ -290,7 +290,7 @@ public class MaskedTextField extends TextField{
      * @return int first placeholder on mask
      */
     public int firstPlaceholderPosition(){
-        for(int i = 0; i < maskLength; i++){
+        for(int i = 0; i < semanticMaskLength; i++){
             if(semanticMask.get(i).isPlaceholder()){
                 return i;
             }
@@ -306,7 +306,7 @@ public class MaskedTextField extends TextField{
     private int maskPositionToPlaintextPosition(int pos){
         int count = 0;
         
-        for (int i = 0; i < maskLength && i < pos; i++){
+        for (int i = 0; i < semanticMaskLength && i < pos; i++){
             Mask m = semanticMask.get(i);
             if (!(m.isPlaceholder() || m.isLiteral())){
                 count++;
@@ -323,7 +323,7 @@ public class MaskedTextField extends TextField{
     private int plaintextPositionToMaskPosition(int pos){
         int countLiterals = 0, countNonLiterals = 0;
         
-        for (int i = 0; i < maskLength && countNonLiterals < pos; i++){
+        for (int i = 0; i < semanticMaskLength && countNonLiterals < pos; i++){
             Mask m = semanticMask.get(i);
             if (m.isLiteral()){
                 countLiterals++;
