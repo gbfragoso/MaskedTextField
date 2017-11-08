@@ -24,6 +24,7 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
+import javafx.scene.control.IndexRange;
 import javafx.scene.control.TextField;
 
 /**
@@ -338,6 +339,13 @@ public class MaskedTextField extends TextField{
     // Overrides
     // *******************************************************
     
+    /**
+     * Main method to insert text on mask.
+     * The left side of newString only exist if user insert text on middle, is empty on most cases
+     * @param start Edition's start range
+     * @param end Edition's end
+     * @param newText Text to be inserted/replaced
+     */
     @Override
     public void replaceText(int start, int end, String newText){
         
@@ -351,12 +359,31 @@ public class MaskedTextField extends TextField{
         selectRange(newPos, newPos);
     }
     
+    /**
+     * Enables the delete/insert text at selected position
+     * @param string 
+     */
+    @Override
+    public void replaceSelection(String string){
+        IndexRange range = getSelection();
+        if(string.equals("")){
+            deleteText(range.getStart(), range.getEnd());
+        }else{
+            replaceText(range.getStart(), range.getEnd(), string);
+        }
+    }
+    
+    /**
+     * Delete text char by char left to right (backspace) and right to left (delete)
+     * @param start Delete start
+     * @param end Delete end
+     */
     @Override
     public void deleteText(int start, int end){
         
         int plainStart = maskPositionToPlaintextPosition(start);
         int plainEnd = maskPositionToPlaintextPosition(end);
-
+        
         StringBuilder newString = new StringBuilder(getPlainText());
         newString.delete(plainStart, plainEnd);
         setPlainText(newString.toString());
