@@ -107,7 +107,11 @@ public class MaskedTextField extends TextField{
     }
     
     public final void setPlainText(String text){
-        plainText.set(text);
+        if(text == null){
+            plainText.set("");
+        }else{
+            plainText.set(text);
+        }
         updateSemanticMask();
     }
     
