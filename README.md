@@ -39,6 +39,3 @@ text.setMask("((####))");
 <MaskedTextField mask="(###)#####-####" placeholder=" " plainText="5555"/>
 ```
 The available tags to use in FXML are: mask, placeholder and plainText;
-
-# Known issues
-When user paste large text with multiple wrong characters the mask will broke.
