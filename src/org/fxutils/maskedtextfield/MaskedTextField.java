@@ -224,6 +224,7 @@ public class MaskedTextField extends TextField{
     			if(m.isPlaceholder()) {
     				
     				if(isCorrect(m.getMask(), newText.charAt(i))) {
+                        // Moving mask and counting slot
     					j++;
     					plainCharCounter++;
     					
