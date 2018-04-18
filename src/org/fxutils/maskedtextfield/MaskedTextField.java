@@ -197,51 +197,68 @@ public class MaskedTextField extends TextField{
     public void updateSemanticMask(){
         resetSemanticMask();
         
-        String newPlainText = getPlainText();
-        
-        int plainCharCounter = 0;
-        int plainTextSize = newPlainText.length();
-
-        char[] textPlain = newPlainText.toCharArray();
-        
-        for(int i = 0; i < semanticMaskLength; i++){
-            Mask m = semanticMask.get(i);
-            
-            // If we has free slots and plainText to add
-            if(m.isPlaceholder() && plainTextSize > plainCharCounter){
-                // Verifing if character entered are valid
-                if(isCorrect(m.getMask(), textPlain[plainCharCounter])){
-
-                    // Change value of mask and turn off isPlaceholder
-                    m.setValue(textPlain[plainCharCounter]);
-                    m.setPlaceholder(false);
-                    
-                    // When MASK_LOWER|UPPER_CHARACTER is set apply lower|upper to the char
-                    if(m.getMask() == MASK_LOWER_CHARACTER){
-                        m.setValue(Character.toLowerCase(textPlain[plainCharCounter]));
-                    }else if(m.getMask() == MASK_UPPER_CHARACTER){
-                        m.setValue(Character.toUpperCase(textPlain[plainCharCounter]));
-                    }
-
-                }else{
-                    // Remove wrong character from textplain
-                    newPlainText = newPlainText.substring(0, plainCharCounter) + newPlainText.substring(plainCharCounter+1);
-                }
-                plainCharCounter++;
-            }
-        }
+        // Consume the inserted text
+        consumeText(getPlainText());
         
         // Setting new text with mask
         setText(allSemanticValuesToString());
-        
-        // Limiting plain text to number of free slots
-        if (plainTextSize > plainCharCounter)
-            newPlainText = newPlainText.substring(0, plainCharCounter);
-        
-        // If the statement above comes "true" or wrong characteres are entered, ajust the plain text
-        if (!newPlainText.equals(getPlainText())){
-            setPlainText(newPlainText);
-        }    
+    }
+    
+    /**
+     * Pass through the text verifying the correct and wrong characters.
+     * All wrong chars will be removed from string.
+     * @param text
+     */
+    private void consumeText(String text) {
+    	String newText = text;
+    	
+    	int j = 0;
+    	int plainCharCounter = 0;
+    	int textLenght = text.length();
+    	
+    	for(int i = 0; i < textLenght; i++) {
+    		if(j < semanticMaskLength) {
+    			
+    			Mask m = semanticMask.get(j);
+    			if(m.isPlaceholder()) {
+    				
+    				if(isCorrect(m.getMask(), newText.charAt(i))) {
+    					j++;
+    					plainCharCounter++;
+    					
+    					// Change value of mask and turn off isPlaceholder
+                        m.setValue(newText.charAt(i));
+                        m.setPlaceholder(false);
+                        
+                        // When MASK_LOWER|UPPER_CHARACTER is set apply lower|upper to the char
+                        if(m.getMask() == MASK_LOWER_CHARACTER){
+                            m.setValue(newText.charAt(i));
+                        }else if(m.getMask() == MASK_UPPER_CHARACTER){
+                            m.setValue(newText.charAt(i));
+                        }
+    				} else {
+    					newText = newText.substring(0, i) + newText.substring(i+1);
+    					textLenght = newText.length();
+    					i--;
+    				}
+    			} else {
+    				j++;
+    				i--;
+    			}
+    		} else {
+    			break;
+    		}
+    	}
+    	
+    	// Adjust plain text when wrong chars are entered
+    	if (!newText.equals(getPlainText())){
+            setPlainText(newText);
+        }
+    	
+    	// Verify exceeding chars
+    	if(plainCharCounter < textLenght) {
+    		setPlainText(newText.substring(0, plainCharCounter));
+    	}
     }
     
     /**
@@ -398,5 +415,47 @@ public class MaskedTextField extends TextField{
     @Override
     public void clear(){
         setPlainText("");
+    }
+    
+    /*
+     * Abstract mask
+     */
+    private class Mask {
+    	
+    	private final char mask;
+    	private final boolean literal;
+    	private char value;
+    	private boolean placeholder;
+    	
+    	public Mask (char value, char mask, boolean literal, boolean placeholder) {
+    		this.value = value;
+    		this.mask = mask;
+    		this.literal = literal;
+    		this.placeholder = placeholder;
+    	}
+    	
+    	public char getMask(){
+    		return this.mask;
+    	}
+    	
+    	public char getValue(){
+    		return this.value;
+    	}
+    	
+    	public void setValue(char value){
+    		this.value = value;
+    	}
+    	
+    	public boolean isLiteral(){
+    		return this.literal;
+    	}
+    	
+    	public boolean isPlaceholder(){
+    		return this.placeholder;
+    	}
+    	
+    	public void setPlaceholder(boolean placeholder) {
+    		this.placeholder = placeholder;
+    	}
     }
 }
