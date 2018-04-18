@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Gustavo Fragoso
+ * Copyright (C) 2018 Gustavo Fragoso
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ import javafx.scene.control.TextField;
  * We added new masks, fixed bugs and improved performance.
  * Now this component works much closer to JFormattedTextfield.
  * @author gbfragoso
+ * @version 1.2
  */
 public class MaskedTextField extends TextField{
     
