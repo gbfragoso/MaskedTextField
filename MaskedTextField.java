@@ -56,17 +56,11 @@ public class MaskedTextField extends TextField{
     private int semanticMaskLength;
     
     public MaskedTextField(){
-        this.mask = new SimpleStringProperty(this, "mask", "");
-        this.placeholder = new SimpleStringProperty(this,"placeholder","_");
-        this.plainText = new SimpleStringProperty(this,"plaintext","");
-        start();
+        this("", '_');
     }
     
     public MaskedTextField(String mask){
-        this.mask = new SimpleStringProperty(this, "mask", mask);
-        this.placeholder = new SimpleStringProperty(this,"placeholder","_");
-        this.plainText = new SimpleStringProperty(this,"plaintext","");
-        start();
+        this(mask, '_');
     }
     
     public MaskedTextField(String mask, char placeHolder){
