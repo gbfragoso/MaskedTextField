@@ -32,7 +32,7 @@ import javafx.scene.control.TextField;
  * We added new masks, fixed bugs and improved performance.
  * Now this component works much closer to JFormattedTextfield.
  * @author gbfragoso
- * @version 1.2
+ * @version 1.3
  */
 public class MaskedTextField extends TextField{
     
@@ -213,39 +213,42 @@ public class MaskedTextField extends TextField{
     private void consumeText(String text) {
     	String newText = text;
     	
-    	int j = 0;
+    	int i = 0, j = 0;
     	int plainCharCounter = 0;
     	int textLenght = text.length();
     	
-    	for(int i = 0; i < textLenght; i++) {
+    	while(i < textLenght) {
+            
     		if(j < semanticMaskLength) {
     			
     			Mask m = semanticMask.get(j);
     			if(m.isPlaceholder()) {
-    				
-    				if(isCorrect(m.getMask(), newText.charAt(i))) {
-                        // Moving mask and counting slot
-    					j++;
-    					plainCharCounter++;
-    					
+                    
+    				char actualMask = m.getMask();
+                    char actualChar = newText.charAt(i);
+    				if(isCorrect(actualMask, actualChar)) {
+                            					
     					// Change value of mask and turn off isPlaceholder
-                        m.setValue(newText.charAt(i));
+                        m.setValue(actualChar);
                         m.setPlaceholder(false);
                         
                         // When MASK_LOWER|UPPER_CHARACTER is set apply lower|upper to the char
-                        if(m.getMask() == MASK_LOWER_CHARACTER){
-                            m.setValue(newText.charAt(i));
-                        }else if(m.getMask() == MASK_UPPER_CHARACTER){
-                            m.setValue(newText.charAt(i));
+                        if(actualMask == MASK_LOWER_CHARACTER){
+                            m.setValue(Character.toLowerCase(actualChar));
+                        }else if(actualMask == MASK_UPPER_CHARACTER){
+                            m.setValue(Character.toUpperCase(actualChar));
                         }
+                        
+                        // Moving pointers ahead
+    					i++;
+    					j++;
+    					plainCharCounter++;
     				} else {
     					newText = newText.substring(0, i) + newText.substring(i+1);
     					textLenght = newText.length();
-    					i--;
     				}
     			} else {
     				j++;
-    				i--;
     			}
     		} else {
     			break;
