@@ -57,9 +57,6 @@ public class MaskedTextField extends TextField {
         init();
     }
     
-    /**
-     * Configuration method
-     */
     private void init() {
         buildSemanticMask();
         updateSemanticMask();
@@ -87,9 +84,9 @@ public class MaskedTextField extends TextField {
         setPlainText(text, true);
     }
     
-    private void setPlainText(String text, boolean callback) {
+    private void setPlainText(String text, boolean update) {
         plainText.set((text != null) ? text : "");
-        if(callback) {
+        if(update) {
             updateSemanticMask();
         }
     }
@@ -141,8 +138,7 @@ public class MaskedTextField extends TextField {
     // *******************************************************
 
     /**
-     * Take user mask and convert it into a Semantic Mask, when each value receives the state of
-     * literal or non-literal.
+     * Build internal mask from input mask using AbstractFactory to add the right MaskCharacter.
      */
     private void buildSemanticMask() {
         char[] newMask = getMask().toCharArray();
@@ -171,8 +167,8 @@ public class MaskedTextField extends TextField {
     }
 
     /**
-     * Returns to the initial semanticMask's state, when all non-literal values are equals to
-     * placeholder char and isPlaceholder is true.
+     * Returns to the initial semanticMask's state when all non-literal values
+     * are equals the placeholder character.
      */
     private void resetSemanticMask() {
         semanticMask.stream().forEach(m-> m.setValue(placeholder));
@@ -213,7 +209,8 @@ public class MaskedTextField extends TextField {
     /**
      * Given a plain text position return the maskPosition
      * 
-     * @param pos
+     * @param pos Position in mask
+     * @return converted position
      */
     private int convertToMaskPosition(int pos) {
         int countLiterals = 0;
@@ -231,8 +228,7 @@ public class MaskedTextField extends TextField {
     }
     
     /**
-     * If a given char is literal, that is isn't a mask, return true
-     * else false.
+     * Return true if a given char isn't a mask.
      * @param c character for verification
      * @return boolean
      */
@@ -248,10 +244,9 @@ public class MaskedTextField extends TextField {
     }
     
     /**
-     * Browse semanticMask and give the position of first mask with isPlaceholder = true. Even if
-     * plainText has a placeholder on it.
+     * Fetch first mask with placeholder on value.
      * 
-     * @return int first placeholder on mask
+     * @return int Position of first placeholder on mask
      */
     public int firstPlaceholderPosition() {
         for (int i = 0; i < maskLength; i++) {
@@ -295,6 +290,7 @@ public class MaskedTextField extends TextField {
                 break;
             }
         }
+        positionCaret(maskPosition);
         setPlainText(validText.toString(), false);
     }
     
@@ -495,6 +491,7 @@ public class MaskedTextField extends TextField {
     }
     
     private class UpperCaseCharacter extends MaskCharacter {
+        
         public UpperCaseCharacter(char value) {
             super(value);
         }
