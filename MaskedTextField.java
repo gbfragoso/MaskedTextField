@@ -1,46 +1,28 @@
-/*
- * Copyright (C) 2018 Gustavo Fragoso
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-package org.fxutils.maskedtextfield;
+package org.casadeguara.componentes;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.value.ObservableValue;
 import javafx.scene.control.IndexRange;
 import javafx.scene.control.TextField;
 
 /**
- * This approach has been inspired on https://github.com/vas7n/VAMaskField solution.
- * We added new masks, fixed bugs and improved performance.
- * Now this component works much closer to JFormattedTextfield.
+ * This approach has been inspired on https://github.com/vas7n/VAMaskField solution. We added new
+ * masks, fixed bugs and improved performance. Now this component works much closer to
+ * JFormattedTextfield.
+ * 
  * @author gbfragoso
- * @version 1.3
+ * @version 2.0
  */
-public class MaskedTextField extends TextField{
-    
+public class MaskedTextField extends TextField {
+
     // Available properties
-    private StringProperty mask;
-    private StringProperty placeholder;
     private StringProperty plainText;
-    
+
     // Available masks
     private static final char MASK_ESCAPE = '\'';
     private static final char MASK_NUMBER = '#';
@@ -50,222 +32,202 @@ public class MaskedTextField extends TextField{
     private static final char MASK_LOWER_CHARACTER = 'L';
     private static final char MASK_CHAR_OR_NUM = 'A';
     private static final char MASK_ANYTHING = '*';
-    
-    private ArrayList<Mask> semanticMask = new ArrayList<>();
+
     private int maskLength;
-    private int semanticMaskLength;
+    private char placeholder;
+    private String mask;
     
-    public MaskedTextField(){
+    private List<MaskCharacter> semanticMask;
+
+    public MaskedTextField() {
         this("", '_');
     }
-    
-    public MaskedTextField(String mask){
+
+    public MaskedTextField(String mask) {
         this(mask, '_');
     }
-    
-    public MaskedTextField(String mask, char placeHolder){
-        this.mask = new SimpleStringProperty(this, "mask", mask);
-        this.placeholder = new SimpleStringProperty(this,"placeholder",String.valueOf(placeHolder));
-        this.plainText = new SimpleStringProperty(this,"plaintext","");
-        start();
+
+    public MaskedTextField(String mask, char placeholder) {
+        this.mask = mask;
+        this.placeholder = placeholder;
+        this.plainText = new SimpleStringProperty(this, "plaintext", "");
+        
+        semanticMask = new ArrayList<>();
+        
+        init();
     }
     
-    // *******************************************************
-    // Property's value getters
-    // *******************************************************
-    public final String getMask(){
-        return mask.get();
+    /**
+     * Configuration method
+     */
+    private void init() {
+        buildSemanticMask();
+        updateSemanticMask();
+        
+        // When MaskedTextField gains focus caret goes to first placeholder position
+        focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if(newValue) {
+                Platform.runLater(() -> {
+                    int pos = firstPlaceholderPosition();
+                    selectRange(pos, pos);
+                    positionCaret(pos);
+                });
+            }
+        });
     }
 
-    public final String getPlaceholder(){
-        return placeholder.get();
-    }
-
-    public final String getPlainText(){
+    // *******************************************************
+    // PlainText Property
+    // *******************************************************
+    public String getPlainText() {
         return plainText.get();
     }
+    
+    public void setPlainText(String text) {
+        setPlainText(text, true);
+    }
+    
+    private void setPlainText(String text, boolean callback) {
+        plainText.set((text != null) ? text : "");
+        if(callback) {
+            updateSemanticMask();
+        }
+    }
+    
+    public StringProperty plainTextProperty() {
+        return plainText;
+    }
 
     // *******************************************************
-    // Property's value setters
+    // Getters and Setters
     // *******************************************************
-    public final void setMask(String m){
-        mask.set(m);
-        maskLength = m.length();
+    
+    /**
+     * Returns the formatting mask.
+     * @return Mask dictating legal character values.
+     */
+    public String getMask() {
+        return this.mask;
+    }
+    
+    /**
+     * Set input mask, rebuild component and update view.
+     * @param mask Mask dictating legal character values.
+     */
+    public final void setMask(String mask) {
+        this.mask = mask;
         buildSemanticMask();
         updateSemanticMask();
     }
     
-    public final void setPlaceholder(String holder){
-        placeholder.set(holder);
-        resetSemanticMask();
-        updateSemanticMask();
+    /**
+     * Returns the character to use in place of characters that are not present in the value, ie the user must fill them in.
+     * @return Character used when formatting if the value does not completely fill the mask
+     */
+    public char getPlaceholder() {
+        return this.placeholder;
     }
     
-    public final void setPlainText(String text){
-        if(text == null){
-            plainText.set("");
-        }else{
-            plainText.set(text);
+    /**
+     * Set placeholder character.
+     * @param placeholder Characters that user must fill.
+     */
+    public void setPlaceholder(char placeholder) {
+        this.placeholder = placeholder;
+    }
+
+    // *******************************************************
+    // Semantic Mask Methods
+    // *******************************************************
+
+    /**
+     * Take user mask and convert it into a Semantic Mask, when each value receives the state of
+     * literal or non-literal.
+     */
+    private void buildSemanticMask() {
+        char[] newMask = getMask().toCharArray();
+        int i = 0;
+        int length = newMask.length;
+        
+        semanticMask.clear();
+        
+        MaskFactory factory = new MaskFactory();
+        while(i < length) {
+            char maskValue = newMask[i];
+
+            // If the actual char is MASK_ESCAPE look the next char as literal
+            if (maskValue == MASK_ESCAPE) {
+                semanticMask.add(factory.createMask(maskValue, newMask[i + 1]));
+                i++;
+            } else {
+                char value = isLiteral(maskValue) ? maskValue : placeholder;
+                semanticMask.add(factory.createMask(maskValue, value));
+            }
+            
+            i++;
         }
-        updateSemanticMask();
+        
+        maskLength = semanticMask.size();
     }
-    
-    // *******************************************************
-    // Property getters
-    // *******************************************************
-    public StringProperty maskProperty(){
-        return mask;
+
+    /**
+     * Returns to the initial semanticMask's state, when all non-literal values are equals to
+     * placeholder char and isPlaceholder is true.
+     */
+    private void resetSemanticMask() {
+        semanticMask.stream().forEach(m-> m.setValue(placeholder));
     }
-    
-    public StringProperty placeholderProperty(){
-        return placeholder;
-    }
-    
-    public StringProperty plainTextProperty(){
-        return plainText;
+
+    /**
+     * Updates all semanticMask's values according to plainText and set the editor text.
+     */
+    public void updateSemanticMask() {
+        resetSemanticMask();
+        stringToValue(getPlainText());
+        setText(valuesToString());
     }
     
     // *******************************************************
     // Methods
     // *******************************************************
-    
+
     /**
-     * Configuration method
+     * Given a position in mask convert it into plainText position
+     * 
+     * @param pos Position in mask
+     * @return converted position
      */
-    private void start(){
-        maskLength = getMask().length();
-        buildSemanticMask();
-        setText(allSemanticValuesToString());
-        
-        // When MaskedTextField gains focus caret goes to first placeholder position
-        focusedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
-            Platform.runLater(() -> {
-                int pos = firstPlaceholderPosition();
-                selectRange(pos, pos);
-                positionCaret(pos);
-            });
-        });
-    }
-    
-    /**
-     * Take user mask and convert it into a Semantic Mask, when each value receives
-     * the state of literal or non-literal.
-     */
-    private void buildSemanticMask(){
-        String newMask = getMask();
-        for (int i = 0; i < maskLength; i++){
-            char c = newMask.charAt(i);
-            
-            // If the actual char is MASK_ESCAPE look the next char as literal
-            if(c == MASK_ESCAPE){
-                semanticMask.add(new Mask(newMask.charAt(i+1), newMask.charAt(i+1), true, false));
-                i++;
-            }else{
-                if(isLiteral(c)){
-                    semanticMask.add(new Mask(c, c, true, false));
-                }else{
-                    semanticMask.add(new Mask(getPlaceholder().charAt(0), c, false, true));
-                }
+    private int convertToPlainTextPosition(int pos) {
+        int count = 0;
+
+        for (int i = 0; i < maskLength && i < pos; i++) {
+            MaskCharacter m = semanticMask.get(i);
+            if (!(m.getValue() == placeholder || m.isLiteral())) {
+                count++;
             }
         }
-        semanticMaskLength = semanticMask.size();
+
+        return count;
     }
-    
+
     /**
-     * Returns to the initial semanticMask's state, when all non-literal values 
-     * are equals to placeholder char and isPlaceholder is true.
+     * Given a plain text position return the maskPosition
+     * 
+     * @param pos
      */
-    private void resetSemanticMask(){
-        char p = getPlaceholder().charAt(0);
-        semanticMask.stream()
-            .filter(e -> !e.isLiteral())
-            .forEach(e -> {
-                e.setValue(p);
-                e.setPlaceholder(true);
-            });
-    }
-    
-    /**
-     * Updates all semanticMask's values according to plainText and set the
-     * editor text.
-     */
-    public void updateSemanticMask(){
-        resetSemanticMask();
-        
-        // Consume the inserted text
-        consumeText(getPlainText());
-        
-        // Setting new text with mask
-        setText(allSemanticValuesToString());
-    }
-    
-    /**
-     * Pass through the text verifying the correct and wrong characters.
-     * All wrong chars will be removed from string.
-     * @param text
-     */
-    private void consumeText(String text) {
-    	String newText = text;
-    	
-    	int i = 0, j = 0;
-    	int plainCharCounter = 0;
-    	int textLenght = text.length();
-    	
-    	while(i < textLenght) {
-            
-    		if(j < semanticMaskLength) {
-    			
-    			Mask m = semanticMask.get(j);
-    			if(m.isPlaceholder()) {
-                    
-    				char actualMask = m.getMask();
-                    char actualChar = newText.charAt(i);
-    				if(isCorrect(actualMask, actualChar)) {
-                            					
-    					// Change value of mask and turn off isPlaceholder
-                        m.setValue(actualChar);
-                        m.setPlaceholder(false);
-                        
-                        // When MASK_LOWER|UPPER_CHARACTER is set apply lower|upper to the char
-                        if(actualMask == MASK_LOWER_CHARACTER){
-                            m.setValue(Character.toLowerCase(actualChar));
-                        }else if(actualMask == MASK_UPPER_CHARACTER){
-                            m.setValue(Character.toUpperCase(actualChar));
-                        }
-                        
-                        // Moving pointers ahead
-    					i++;
-    					j++;
-    					plainCharCounter++;
-    				} else {
-    					newText = newText.substring(0, i) + newText.substring(i+1);
-    					textLenght = newText.length();
-    				}
-    			} else {
-    				j++;
-    			}
-    		} else {
-    			break;
-    		}
-    	}
-    	
-    	// Adjust plain text when wrong chars are entered
-    	if (!newText.equals(getPlainText())){
-            setPlainText(newText);
+    private int convertToMaskPosition(int pos) {
+        int countLiterals = 0;
+        int countNonLiterals = 0;
+
+        for (int i = 0; i < maskLength && countNonLiterals < pos; i++) {
+            if (semanticMask.get(i).isLiteral()) {
+                countLiterals++;
+            } else {
+                countNonLiterals++;
+            }
         }
-    	
-    	// Verify exceeding chars
-    	if(plainCharCounter < textLenght) {
-    		setPlainText(newText.substring(0, plainCharCounter));
-    	}
-    }
-    
-    /**
-     * Get all the semanticMask's values and convert it into an string.
-     * @return String Concatenation of all values of semanticMask
-     */
-    private String allSemanticValuesToString(){
-        return semanticMask.stream().map(e -> String.valueOf(e.getValue())).collect(Collectors.joining());
+
+        return countLiterals + countNonLiterals;
     }
     
     /**
@@ -286,32 +248,14 @@ public class MaskedTextField extends TextField{
     }
     
     /**
-     * For an given char and mask, returns if char is according with the mask
-     * @param m An valid mask value
-     * @param value Any char
-     * @return boolean Return true if the given char is according with the mask
-     */
-    public boolean isCorrect(char m, char value){
-        switch(m){
-            case MASK_ANYTHING: return true;
-            case MASK_CHARACTER: return Character.isLetter(value);
-            case MASK_NUMBER: return Character.isDigit(value);
-            case MASK_CHAR_OR_NUM: return Character.isLetterOrDigit(value);
-            case MASK_HEXADECIMAL: return Pattern.matches("[0-9a-fA-F]", String.valueOf(value));
-            case MASK_LOWER_CHARACTER: return Character.isLetter(value);
-            case MASK_UPPER_CHARACTER: return Character.isLetter(value);
-        }
-        return false;
-    }
-    
-    /**
-     * Browse semanticMask and give the position of first mask with isPlaceholder = true.
-     * Even if plainText has a placeholder on it.
+     * Browse semanticMask and give the position of first mask with isPlaceholder = true. Even if
+     * plainText has a placeholder on it.
+     * 
      * @return int first placeholder on mask
      */
-    public int firstPlaceholderPosition(){
-        for(int i = 0; i < semanticMaskLength; i++){
-            if(semanticMask.get(i).isPlaceholder()){
+    public int firstPlaceholderPosition() {
+        for (int i = 0; i < maskLength; i++) {
+            if (semanticMask.get(i).getValue() == placeholder) {
                 return i;
             }
         }
@@ -319,142 +263,274 @@ public class MaskedTextField extends TextField{
     }
     
     /**
-     * Given a position in mask convert it into plainText position
-     * @param pos Position in mask
-     * @return converted position
+     * Insert values on semantic mask.
+     * @param text Plain text to be inserted
      */
-    private int maskPositionToPlaintextPosition(int pos){
-        int count = 0;
+    private void stringToValue(String text) {
+        StringBuilder inputText = new StringBuilder(text);
+        StringBuilder validText = new StringBuilder();
+
+        int maskPosition = 0;
+        int textLength = text.length();
+        int textPosition = 0;
         
-        for (int i = 0; i < semanticMaskLength && i < pos; i++){
-            Mask m = semanticMask.get(i);
-            if (!(m.isPlaceholder() || m.isLiteral())){
-                count++;
+        while (textPosition < textLength) {
+            if (maskPosition < maskLength) {
+                MaskCharacter maskCharacter = semanticMask.get(maskPosition);
+                
+                if (!maskCharacter.isLiteral()) {
+                    char ch = inputText.charAt(textPosition);
+                    
+                    if(maskCharacter.accept(ch)) {
+                        maskCharacter.setValue(ch);
+                        validText.append(maskCharacter.getValue());
+                        maskPosition++;
+                    } 
+
+                    textPosition++;
+                } else {
+                    maskPosition++;
+                }
+            } else {
+                break;
             }
         }
-        
-        return count;
+        setPlainText(validText.toString(), false);
     }
     
     /**
-     * Given a plain text position return the maskPosition
-     * @param pos 
+     * Get all the semanticMask's values and convert it into an string.
+     * 
+     * @return String Concatenation of all values of semanticMask
      */
-    private int plaintextPositionToMaskPosition(int pos){
-        int countLiterals = 0, countNonLiterals = 0;
-        
-        for (int i = 0; i < semanticMaskLength && countNonLiterals < pos; i++){
-            Mask m = semanticMask.get(i);
-            if (m.isLiteral()){
-                countLiterals++;
-            }else {
-                countNonLiterals++;
-            }
-        }
-        
-        return countLiterals + countNonLiterals;
+    private String valuesToString() {
+        StringBuilder value = new StringBuilder();
+        semanticMask.stream().forEach(character -> value.append(character.getValue()));
+        return value.toString();
     }
-    
+
     // *******************************************************
     // Overrides
     // *******************************************************
-    
+
     /**
-     * Main method to insert text on mask.
-     * The left side of newString only exist if user insert text on middle, is empty on most cases
+     * Main method to insert text on mask. The left side of newString only exist if user insert text
+     * on middle, is empty on most cases
+     * 
      * @param start Edition's start range
      * @param end Edition's end
      * @param newText Text to be inserted/replaced
      */
     @Override
-    public void replaceText(int start, int end, String newText){
-        
-        int plainStart = maskPositionToPlaintextPosition(start);
-        
-        String oldPlainText = getPlainText();
-        String newString = oldPlainText.substring(0, plainStart) + newText + oldPlainText.substring(plainStart, oldPlainText.length());
+    public void replaceText(int start, int end, String newText) {
+        int position = convertToPlainTextPosition(start);
+
+        StringBuilder builder = new StringBuilder(getPlainText());
+        String newString = builder.insert(position, newText).toString();
         setPlainText(newString);
-        
-        int newPos = plaintextPositionToMaskPosition(newString.lastIndexOf(newText) + newText.length());
-        selectRange(newPos, newPos);
+
+        int newCaretPosition = convertToMaskPosition(newString.lastIndexOf(newText) + newText.length());
+        selectRange(newCaretPosition, newCaretPosition);
     }
-    
+
     /**
      * Enables the delete/insert text at selected position
-     * @param string 
+     * 
+     * @param string
      */
     @Override
-    public void replaceSelection(String string){
+    public void replaceSelection(String string) {
         IndexRange range = getSelection();
-        if(string.equals("")){
+        if (string.equals("")) {
             deleteText(range.getStart(), range.getEnd());
-        }else{
+        } else {
             replaceText(range.getStart(), range.getEnd(), string);
         }
     }
-    
+
     /**
      * Delete text char by char left to right (backspace) and right to left (delete)
+     * 
      * @param start Delete start
      * @param end Delete end
      */
     @Override
-    public void deleteText(int start, int end){
-        
-        int plainStart = maskPositionToPlaintextPosition(start);
-        int plainEnd = maskPositionToPlaintextPosition(end);
-        
+    public void deleteText(int start, int end) {
+
+        int plainStart = convertToPlainTextPosition(start);
+        int plainEnd = convertToPlainTextPosition(end);
+
         StringBuilder newString = new StringBuilder(getPlainText());
         newString.delete(plainStart, plainEnd);
         setPlainText(newString.toString());
 
         selectRange(start, start);
     }
-    
+
     @Override
-    public void clear(){
+    public void clear() {
         setPlainText("");
     }
     
-    /*
-     * Abstract mask
-     */
-    private class Mask {
-    	
-    	private final char mask;
-    	private final boolean literal;
-    	private char value;
-    	private boolean placeholder;
-    	
-    	public Mask (char value, char mask, boolean literal, boolean placeholder) {
-    		this.value = value;
-    		this.mask = mask;
-    		this.literal = literal;
-    		this.placeholder = placeholder;
-    	}
-    	
-    	public char getMask(){
-    		return this.mask;
-    	}
-    	
-    	public char getValue(){
-    		return this.value;
-    	}
-    	
-    	public void setValue(char value){
-    		this.value = value;
-    	}
-    	
-    	public boolean isLiteral(){
-    		return this.literal;
-    	}
-    	
-    	public boolean isPlaceholder(){
-    		return this.placeholder;
-    	}
-    	
-    	public void setPlaceholder(boolean placeholder) {
-    		this.placeholder = placeholder;
-    	}
+    // *******************************************************
+    // Private Classes
+    // *******************************************************
+    private abstract class MaskCharacter {
+        
+        private char value;
+        
+        public MaskCharacter(char value) {
+            this.value = value;
+        }
+        
+        public char getValue() {
+            return this.value;
+        }
+        
+        public void setValue(char value) {
+            this.value = value;
+        }
+        
+        public boolean isLiteral() {
+            return false;
+        }
+        
+        abstract boolean accept(char value);
+    }
+    
+    private class MaskFactory {
+        
+        public MaskCharacter createMask(char mask, char value) {
+            switch (mask) {
+                case MASK_ANYTHING:
+                    return new AnythingCharacter(value);
+                case MASK_CHARACTER:
+                    return new LetterCharacter(value);
+                case MASK_NUMBER:
+                    return new NumericCharacter(value);
+                case MASK_CHAR_OR_NUM:
+                    return new AlphaNumericCharacter(value);
+                case MASK_HEXADECIMAL:
+                    return new HexCharacter(value);
+                case MASK_LOWER_CHARACTER:
+                    return new LowerCaseCharacter(value);
+                case MASK_UPPER_CHARACTER:
+                    return new UpperCaseCharacter(value);
+                default:
+                    return new LiteralCharacter(value);
+            }
+
+        } 
+    }
+    
+    private class AnythingCharacter extends MaskCharacter {
+        
+        public AnythingCharacter(char value) {
+            super(value);
+        }
+
+        public boolean accept(char value) {
+            return true;
+        }
+    }
+    
+    private class AlphaNumericCharacter extends MaskCharacter {
+        
+        public AlphaNumericCharacter(char value) {
+            super(value);
+        }
+
+        public boolean accept(char value) {
+            return Character.isLetterOrDigit(value);
+        }
+    }
+    
+    private class LiteralCharacter extends MaskCharacter {
+
+        public LiteralCharacter(char value) {
+            super(value);
+        }
+        
+        @Override
+        public boolean isLiteral() {
+            return true;
+        }
+        
+        @Override
+        public void setValue(char value) {
+            // Literal can't be changed
+        }
+
+        public boolean accept(char value) {
+            return false;
+        }
+    }
+    
+    private class LetterCharacter extends MaskCharacter {
+
+        public LetterCharacter(char value) {
+            super(value);
+        }
+
+        public boolean accept(char value) {
+            return Character.isLetter(value);
+        }
+
+    }
+    
+    private class LowerCaseCharacter extends MaskCharacter {
+        
+        public LowerCaseCharacter(char value) {
+            super(value);
+        }
+
+        @Override
+        public char getValue() {
+            return Character.toLowerCase(super.getValue());
+        }
+               
+        public boolean accept(char value) {
+            return Character.isLetter(value);
+        }
+    }
+    
+    private class UpperCaseCharacter extends MaskCharacter {
+        public UpperCaseCharacter(char value) {
+            super(value);
+        }
+
+        @Override
+        public char getValue() {
+            return Character.toUpperCase(super.getValue());
+        }
+        
+        public boolean accept(char value) {
+            return Character.isLetter(value);
+        }
+    }
+    
+    private class NumericCharacter extends MaskCharacter {
+
+        public NumericCharacter(char value) {
+            super(value);
+        }
+
+        @Override
+        public boolean accept(char value) {
+            return Character.isDigit(value);
+        }
+    
+    }
+    
+    private class HexCharacter extends MaskCharacter {
+        
+        public HexCharacter(char value) {
+            super(value);
+        }
+
+        @Override
+        public boolean accept(char value) {
+            return Pattern.matches("[0-9a-fA-F]", String.valueOf(value));
+        }
     }
 }
