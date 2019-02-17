@@ -26,9 +26,9 @@ The following table shows the characters that you can use in the formatting mask
 MaskedTextField text = new MaskedTextField("(###)#####-####"); // Only Number
 
 // Change placeholder to empty space
-text.setPlaceHolder(" ");
+text.setPlaceHolder(' ');
 
-// Change mask (Preserve the text respecting the new mask)
+// Change mask
 text.setMask("((####))");
 ```
 
@@ -36,6 +36,6 @@ text.setMask("((####))");
 ```
 <?import packagepath.MaskedTextField?>
 
-<MaskedTextField mask="(###)#####-####" placeholder=" " plainText="5555"/>
+<MaskedTextField mask="(###)#####-####" plainText="5555"/>
 ```
 The available tags to use in FXML are: mask, placeholder and plainText;

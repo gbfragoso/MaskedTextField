@@ -1,5 +1,3 @@
-package org.casadeguara.componentes;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -290,7 +288,7 @@ public class MaskedTextField extends TextField {
                 break;
             }
         }
-        positionCaret(maskPosition);
+
         setPlainText(validText.toString(), false);
     }
     
