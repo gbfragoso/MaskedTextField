@@ -1,3 +1,5 @@
+package org.casadeguara.componentes;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -34,6 +36,7 @@ public class MaskedTextField extends TextField {
     private int maskLength;
     private char placeholder;
     private String mask;
+    private StringBuilder plainTextBuilder;
     
     private List<MaskCharacter> semanticMask;
 
@@ -49,15 +52,15 @@ public class MaskedTextField extends TextField {
         this.mask = mask;
         this.placeholder = placeholder;
         this.plainText = new SimpleStringProperty(this, "plaintext", "");
-        
-        semanticMask = new ArrayList<>();
+        this.plainTextBuilder = new StringBuilder();
+        this.semanticMask = new ArrayList<>();
         
         init();
     }
     
     private void init() {
         buildSemanticMask();
-        updateSemanticMask();
+        updateSemanticMask("");
         
         // When MaskedTextField gains focus caret goes to first placeholder position
         focusedProperty().addListener((observable, oldValue, newValue) -> {
@@ -84,8 +87,9 @@ public class MaskedTextField extends TextField {
     
     private void setPlainText(String text, boolean update) {
         plainText.set((text != null) ? text : "");
+        
         if(update) {
-            updateSemanticMask();
+            updateSemanticMask(text);
         }
     }
     
@@ -112,7 +116,7 @@ public class MaskedTextField extends TextField {
     public final void setMask(String mask) {
         this.mask = mask;
         buildSemanticMask();
-        updateSemanticMask();
+        updateSemanticMask("");
     }
     
     /**
@@ -175,9 +179,9 @@ public class MaskedTextField extends TextField {
     /**
      * Updates all semanticMask's values according to plainText and set the editor text.
      */
-    public void updateSemanticMask() {
+    public void updateSemanticMask(String newText) {
         resetSemanticMask();
-        stringToValue(getPlainText());
+        stringToValue(newText);
         setText(valuesToString());
     }
     
@@ -288,7 +292,7 @@ public class MaskedTextField extends TextField {
                 break;
             }
         }
-
+        
         setPlainText(validText.toString(), false);
     }
     
@@ -318,10 +322,9 @@ public class MaskedTextField extends TextField {
     @Override
     public void replaceText(int start, int end, String newText) {
         int position = convertToPlainTextPosition(start);
-
-        StringBuilder builder = new StringBuilder(getPlainText());
-        String newString = builder.insert(position, newText).toString();
-        setPlainText(newString);
+        
+        String newString = plainTextBuilder.insert(position, newText).toString();
+        updateSemanticMask(newString);
 
         int newCaretPosition = convertToMaskPosition(newString.lastIndexOf(newText) + newText.length());
         selectRange(newCaretPosition, newCaretPosition);
@@ -353,10 +356,9 @@ public class MaskedTextField extends TextField {
 
         int plainStart = convertToPlainTextPosition(start);
         int plainEnd = convertToPlainTextPosition(end);
-
-        StringBuilder newString = new StringBuilder(getPlainText());
-        newString.delete(plainStart, plainEnd);
-        setPlainText(newString.toString());
+        
+        plainTextBuilder.delete(plainStart, plainEnd);
+        updateSemanticMask(plainTextBuilder.toString());
 
         selectRange(start, start);
     }
