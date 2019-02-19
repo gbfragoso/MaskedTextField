@@ -17,8 +17,7 @@ import javafx.scene.control.TextField;
  * 
  * @author gbfragoso
  * @version 2.0
- */
-public class MaskedTextField extends TextField {
+ */public class MaskedTextField extends TextField {
 
     // Available properties
     private StringProperty plainText;
@@ -86,10 +85,11 @@ public class MaskedTextField extends TextField {
     }
     
     private void setPlainText(String text, boolean update) {
-        plainText.set((text != null) ? text : "");
+        String newText = (text != null) ? text : "";
+        plainText.set(newText);
         
         if(update) {
-            updateSemanticMask(text);
+            updateSemanticMask(newText);
         }
     }
     
