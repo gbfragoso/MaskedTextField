@@ -91,7 +91,7 @@ public class MaskedTextField extends TextField {
      * @param mask Mask dictating legal character values.
      */
     public void setMask(String mask) {
-        mask.set(mask);
+        this.mask.set(mask);
         buildSemanticMask();
         updateSemanticMask("");
     }
@@ -226,13 +226,13 @@ public class MaskedTextField extends TextField {
     }
     
     private void setPlainTextWithUpdate(String text) {
-        setPlainTextWithoutUpdate(text);
-        updateSemanticMask(text);        
+        String newText = (text != null) ? text : "";
+        setPlainTextWithoutUpdate(newText);
+        updateSemanticMask(newText);        
     }
     
     private void setPlainTextWithoutUpdate(String text) {
-        String newText = (text != null) ? text : "";
-        plainText.set(newText);        
+        plainText.set(text);        
     }
     
     /**
