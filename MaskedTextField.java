@@ -27,7 +27,7 @@ public class MaskedTextField extends TextField {
 
     private int maskLength;
     private char placeholder;
-    private String mask;
+    private StringProperty mask;
     private StringProperty plainText;
     private StringBuilder plainTextBuilder;
     
@@ -42,7 +42,7 @@ public class MaskedTextField extends TextField {
     }
 
     public MaskedTextField(String mask, char placeholder) {
-        this.mask = mask;
+        this.mask = new SimpleStringProperty(this, "mask", mask);
         this.placeholder = placeholder;
         this.plainText = new SimpleStringProperty(this, "plaintext", "");
         this.plainTextBuilder = new StringBuilder();
@@ -68,7 +68,7 @@ public class MaskedTextField extends TextField {
     }
 
     // *******************************************************
-    // PlainText Property
+    // Properties
     // *******************************************************
     public String getPlainText() {
         return plainText.get();
@@ -79,29 +79,30 @@ public class MaskedTextField extends TextField {
     }
     
     public StringProperty plainTextProperty() {
-        return plainText;
+        return this.plainText;
+    }
+
+    public String getMask() {
+        return mask.get();
+    }
+    
+    /**
+     * Set input mask, rebuild internal mask and update view.
+     * @param mask Mask dictating legal character values.
+     */
+    public void setMask(String mask) {
+        mask.set(mask);
+        buildSemanticMask();
+        updateSemanticMask("");
+    }
+
+    public StringProperty maskProperty() {
+        return this.mask;
     }
 
     // *******************************************************
     // Getters and Setters
     // *******************************************************
-    
-    /**
-     * Returns the formatting mask.
-     */
-    public String getMask() {
-        return this.mask;
-    }
-    
-    /**
-     * Set input mask, rebuild component and update view.
-     * @param mask Mask dictating legal character values.
-     */
-    public final void setMask(String mask) {
-        this.mask = mask;
-        buildSemanticMask();
-        updateSemanticMask("");
-    }
     
     /**
      * Returns the character to use in place of characters that are not present in the value, ie the user must fill them in.
