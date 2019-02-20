@@ -1,5 +1,3 @@
-package org.casadeguara.componentes;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -11,18 +9,13 @@ import javafx.scene.control.IndexRange;
 import javafx.scene.control.TextField;
 
 /**
- * This approach has been inspired on https://github.com/vas7n/VAMaskField solution. We added new
- * masks, fixed bugs and improved performance. Now this component works much closer to
- * JFormattedTextfield.
+ * This component receives a mask that dictate the valid input for this field.
  * 
  * @author gbfragoso
  * @version 2.0
- */public class MaskedTextField extends TextField {
+ */
+public class MaskedTextField extends TextField {
 
-    // Available properties
-    private StringProperty plainText;
-
-    // Available masks
     private static final char MASK_ESCAPE = '\'';
     private static final char MASK_NUMBER = '#';
     private static final char MASK_CHARACTER = '?';
@@ -35,6 +28,7 @@ import javafx.scene.control.TextField;
     private int maskLength;
     private char placeholder;
     private String mask;
+    private StringProperty plainText;
     private StringBuilder plainTextBuilder;
     
     private List<MaskCharacter> semanticMask;
@@ -81,16 +75,7 @@ import javafx.scene.control.TextField;
     }
     
     public void setPlainText(String text) {
-        setPlainText(text, true);
-    }
-    
-    private void setPlainText(String text, boolean update) {
-        String newText = (text != null) ? text : "";
-        plainText.set(newText);
-        
-        if(update) {
-            updateSemanticMask(newText);
-        }
+        setPlainTextWithUpdate(text);
     }
     
     public StringProperty plainTextProperty() {
@@ -103,7 +88,6 @@ import javafx.scene.control.TextField;
     
     /**
      * Returns the formatting mask.
-     * @return Mask dictating legal character values.
      */
     public String getMask() {
         return this.mask;
@@ -121,7 +105,6 @@ import javafx.scene.control.TextField;
     
     /**
      * Returns the character to use in place of characters that are not present in the value, ie the user must fill them in.
-     * @return Character used when formatting if the value does not completely fill the mask
      */
     public char getPlaceholder() {
         return this.placeholder;
@@ -129,7 +112,6 @@ import javafx.scene.control.TextField;
     
     /**
      * Set placeholder character.
-     * @param placeholder Characters that user must fill.
      */
     public void setPlaceholder(char placeholder) {
         this.placeholder = placeholder;
@@ -168,32 +150,22 @@ import javafx.scene.control.TextField;
         maskLength = semanticMask.size();
     }
 
-    /**
-     * Returns to the initial semanticMask's state when all non-literal values
-     * are equals the placeholder character.
-     */
     private void resetSemanticMask() {
-        semanticMask.stream().forEach(m-> m.setValue(placeholder));
+        semanticMask.stream().forEach(maskCharacter-> maskCharacter.setValue(placeholder));
     }
 
-    /**
-     * Updates all semanticMask's values according to plainText and set the editor text.
-     */
-    public void updateSemanticMask(String newText) {
+    private void updateSemanticMask(String newText) {
         resetSemanticMask();
         stringToValue(newText);
         setText(valuesToString());
     }
     
     // *******************************************************
-    // Methods
+    // Private Methods
     // *******************************************************
 
     /**
      * Given a position in mask convert it into plainText position
-     * 
-     * @param pos Position in mask
-     * @return converted position
      */
     private int convertToPlainTextPosition(int pos) {
         int count = 0;
@@ -209,10 +181,7 @@ import javafx.scene.control.TextField;
     }
 
     /**
-     * Given a plain text position return the maskPosition
-     * 
-     * @param pos Position in mask
-     * @return converted position
+     * Given a position in plain text convert it into mask position
      */
     private int convertToMaskPosition(int pos) {
         int countLiterals = 0;
@@ -231,8 +200,6 @@ import javafx.scene.control.TextField;
     
     /**
      * Return true if a given char isn't a mask.
-     * @param c character for verification
-     * @return boolean
      */
     private boolean isLiteral(char c){
         return (c != MASK_ANYTHING &&
@@ -246,17 +213,25 @@ import javafx.scene.control.TextField;
     }
     
     /**
-     * Fetch first mask with placeholder on value.
-     * 
-     * @return int Position of first placeholder on mask
+     * Return the position of first mask with placeholder on value.
      */
-    public int firstPlaceholderPosition() {
+    private int firstPlaceholderPosition() {
         for (int i = 0; i < maskLength; i++) {
             if (semanticMask.get(i).getValue() == placeholder) {
                 return i;
             }
         }
         return -1;
+    }
+    
+    private void setPlainTextWithUpdate(String text) {
+        setPlainTextWithoutUpdate(text);
+        updateSemanticMask(text);        
+    }
+    
+    private void setPlainTextWithoutUpdate(String text) {
+        String newText = (text != null) ? text : "";
+        plainText.set(newText);        
     }
     
     /**
@@ -293,13 +268,11 @@ import javafx.scene.control.TextField;
             }
         }
         
-        setPlainText(validText.toString(), false);
+        setPlainTextWithoutUpdate(validText.toString());
     }
     
     /**
      * Get all the semanticMask's values and convert it into an string.
-     * 
-     * @return String Concatenation of all values of semanticMask
      */
     private String valuesToString() {
         StringBuilder value = new StringBuilder();
@@ -311,30 +284,18 @@ import javafx.scene.control.TextField;
     // Overrides
     // *******************************************************
 
-    /**
-     * Main method to insert text on mask. The left side of newString only exist if user insert text
-     * on middle, is empty on most cases
-     * 
-     * @param start Edition's start range
-     * @param end Edition's end
-     * @param newText Text to be inserted/replaced
-     */
     @Override
     public void replaceText(int start, int end, String newText) {
         int position = convertToPlainTextPosition(start);
         
         String newString = plainTextBuilder.insert(position, newText).toString();
         updateSemanticMask(newString);
-
-        int newCaretPosition = convertToMaskPosition(newString.lastIndexOf(newText) + newText.length());
+        
+        int endOfNewText = newString.lastIndexOf(newText) + newText.length();
+        int newCaretPosition = convertToMaskPosition(endOfNewText);
         selectRange(newCaretPosition, newCaretPosition);
     }
 
-    /**
-     * Enables the delete/insert text at selected position
-     * 
-     * @param string
-     */
     @Override
     public void replaceSelection(String string) {
         IndexRange range = getSelection();
@@ -345,12 +306,6 @@ import javafx.scene.control.TextField;
         }
     }
 
-    /**
-     * Delete text char by char left to right (backspace) and right to left (delete)
-     * 
-     * @param start Delete start
-     * @param end Delete end
-     */
     @Override
     public void deleteText(int start, int end) {
 
