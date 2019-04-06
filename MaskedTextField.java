@@ -10,9 +10,8 @@ import javafx.scene.control.TextField;
 
 /**
  * This component receives a mask that dictate the valid input for this field.
- * 
  * @author gbfragoso
- * @version 2.0
+ * @version 2.1
  */
 public class MaskedTextField extends TextField {
 
@@ -232,6 +231,7 @@ public class MaskedTextField extends TextField {
     }
     
     private void setPlainTextWithoutUpdate(String text) {
+        plainTextBuilder = new StringBuilder(text);
         plainText.set(text);        
     }
     
