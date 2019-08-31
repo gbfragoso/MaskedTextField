@@ -64,6 +64,12 @@ public class MaskedTextField extends TextField {
                 });
             }
         });
+        
+        // Add a listener to the plain text property so that binding will properly update the formatting as well
+        this.plainTextProperty().addListener((observable, oldValue, newValue) ->
+        {
+            this.updateSemanticMask(newValue);
+        });
     }
 
     // *******************************************************
