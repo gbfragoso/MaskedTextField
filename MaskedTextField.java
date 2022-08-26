@@ -294,12 +294,17 @@ public class MaskedTextField extends TextField {
     @Override
     public void replaceText(int start, int end, String newText) {
         int position = convertToPlainTextPosition(start);
-        
-        String newString = plainTextBuilder.insert(position, newText).toString();
+        int endPosition = convertToPlainTextPosition(end);
+
+        String newString = null;
+        if (start != end) {
+            newString = plainTextBuilder.replace(position, endPosition, newText).toString();
+        } else {
+            newString = plainTextBuilder.insert(position, newText).toString();
+        }
         updateSemanticMask(newString);
         
-        int endOfNewText = newString.lastIndexOf(newText) + newText.length();
-        int newCaretPosition = convertToMaskPosition(endOfNewText);
+        int newCaretPosition = convertToMaskPosition(position + newText.length());
         selectRange(newCaretPosition, newCaretPosition);
     }
 
